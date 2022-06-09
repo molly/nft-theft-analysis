@@ -11,3 +11,10 @@ def valid_date(d):
         except ValueError:
             pass
     raise ValueError("Invalid date format")
+
+
+def address_equals(a, b):
+    """Case insensitive string comparison"""
+    if not a or not b:
+        return False
+    return a.casefold() == b.casefold()
