@@ -1,10 +1,13 @@
 import argparse
-from opensea import get_transfers
+from etherscan import get_transfers
+from price import get_price_details_for_transactions
 from utils import *
+from etherscan_scraper import get_transaction_details
 
 
 def analyze(args):
-    return get_transfers(**vars(args))
+    transactions = get_transfers(**vars(args))
+    price_details = get_price_details_for_transactions(transactions)
 
 
 if __name__ == "__main__":
