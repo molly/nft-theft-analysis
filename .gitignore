@@ -130,5 +130,5 @@ dmypy.json
 
 secrets.py
 .idea/
-tmp.*
-*_tmp.*
+*.json
+*.tsv

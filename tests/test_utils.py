@@ -35,3 +35,26 @@ def test_pick():
     assert "b" not in missing_key
     assert "z" in missing_key
     assert missing_key["z"] is None
+
+
+def test_find_by():
+    haystack = [
+        {"a": 1, "b": 2, "name": "item1"},
+        {"c": 3, "d": 4, "name": "item2"},
+        {"a": 1, "c": 3, "name": "item3"},
+        {"b": 2, "d": 4, "name": "item4"},
+    ]
+    result1 = find_by(haystack, a=1, c=3)
+    assert result1["name"] == "item3"
+
+    # Should find first entry in list even if multiple entries match criterion
+    result2 = find_by(haystack, a=1)
+    assert result2["name"] == "item1"
+
+    # Should return None if no entry matches any criteria
+    result3 = find_by(haystack, a=2)
+    assert result3 is None
+
+    # Should return None if no entry matches all criteria
+    result3 = find_by(haystack, a=1, b=1)
+    assert result3 is None

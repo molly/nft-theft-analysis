@@ -47,7 +47,6 @@ def get_transfers(
     blocks = None
     if start_timestamp or end_timestamp:
         blocks = get_block_numbers(start_timestamp, end_timestamp)
-        print(blocks)
 
     response = requests.get(
         API_URL,
@@ -65,3 +64,13 @@ def get_transfers(
     data = response.json()
     data = list(data["result"])
     return data
+
+
+def get_current_eth_price():
+    response = requests.get(
+        API_URL,
+        {"module": "stats", "action": "ethprice", "apikey": ETHERSCAN_API_KEY},
+        headers=SHARED_HEADERS,
+    )
+    data = response.json()
+    return float(data["result"]["ethusd"])

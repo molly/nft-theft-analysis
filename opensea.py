@@ -15,6 +15,7 @@ COLLECTION_STATS_KEYS = [
     "thirty_day_average_price",
     "floor_price",
     "average_price",
+    "total_sales",
 ]
 
 
@@ -23,10 +24,8 @@ def request_with_backoff(*args, **kwargs):
     if response.status_code == 200:
         return response
     elif response.status_code == 429:
-        print(
-            "Throttled, trying again in " + sleep(response.headers["retry-after"]) + "s"
-        )
-        sleep(response.headers["retry-after"])
+        print("Throttled, trying again in " + response.headers["retry-after"] + "s")
+        sleep(int(response.headers["retry-after"]))
         return request_with_backoff(*args, **kwargs)
     else:
         raise Exception

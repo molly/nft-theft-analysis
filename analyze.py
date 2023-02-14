@@ -4,6 +4,7 @@ import os
 from etherscan import get_transfers
 from opensea import get_slug
 from price import get_price_details_for_transactions
+from report import make_report
 from utils import *
 
 
@@ -38,17 +39,20 @@ def sort_by_nft(transactions, thief):
 
 
 def analyze(args):
-    if args.dev and os.path.exists("tmp.json"):
-        with open("tmp.json", "r") as json_file:
-            nfts = json.load(json_file)
+    if args.dev and os.path.exists("price_data.json"):
+        with open("price_data.json", "r") as price_json_file:
+            details = json.load(price_json_file)
+    elif args.dev and os.path.exists("nft_data.json"):
+        with open("nft_data.json", "r") as nft_json_file:
+            nfts = json.load(nft_json_file)
     else:
         transactions = get_transfers(**vars(args))
         nfts = sort_by_nft(transactions, args.thief_wallet)
-        with open("tmp.json", "w+") as json_file:
+        with open("nft_data.json", "w+") as json_file:
             json.dump(nfts, json_file, indent=2)
+        details = get_price_details_for_transactions(nfts, args.thief_wallet)
 
-    details = get_price_details_for_transactions(nfts)
-    print("hi")
+    make_report(details)
 
 
 if __name__ == "__main__":
