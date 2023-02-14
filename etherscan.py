@@ -1,6 +1,6 @@
 import requests
+from constants import SHARED_HEADERS
 from secrets import ETHERSCAN_API_KEY
-from utils import *
 
 API_URL = "https://api.etherscan.io/api"
 
@@ -32,6 +32,7 @@ def get_block_numbers(start_timestamp=None, end_timestamp=None):
                 "timestamp": int(end_timestamp.timestamp()),
                 "closest": "after",
             },
+            headers=SHARED_HEADERS,
         )
         data = response.json()
         if data["status"] == "1":
@@ -39,20 +40,10 @@ def get_block_numbers(start_timestamp=None, end_timestamp=None):
     return results
 
 
-def make_transaction_filter(thief_wallet=None, victim_wallet=None):
-    def transaction_filter(transaction):
-        return (
-            thief_wallet is None or address_equals(transaction["to"], thief_wallet)
-        ) and (
-            victim_wallet is None or address_equals(transaction["from"], victim_wallet)
-        )
-
-    return transaction_filter
-
-
 def get_transfers(
-    thief_wallet=None, victim_wallet=None, start_timestamp=None, end_timestamp=None
+    thief_wallet=None, start_timestamp=None, end_timestamp=None, **kwargs
 ):
+
     blocks = None
     if start_timestamp or end_timestamp:
         blocks = get_block_numbers(start_timestamp, end_timestamp)
@@ -63,15 +54,14 @@ def get_transfers(
         {
             "module": "account",
             "action": "tokennfttx",
-            "address": thief_wallet or victim_wallet,
+            "address": thief_wallet,
             "startblock": blocks and blocks["start"],
             "endblock": blocks and blocks["end"],
             "sort": "asc",
             "apikey": ETHERSCAN_API_KEY,
         },
+        headers=SHARED_HEADERS,
     )
     data = response.json()
-    data = list(
-        filter(make_transaction_filter(thief_wallet, victim_wallet), data["result"])
-    )
+    data = list(data["result"])
     return data

@@ -1,16 +1,30 @@
-from etherscan_scraper import get_transaction_details
+from opensea import get_collection_stats
 import json
 
 API_URL = "https://api.etherscan.io/api"
 
 
-def get_price_details_for_transactions(transactions):
+def get_price_details_for_transactions(nfts_original):
+    nfts = nfts_original.copy()
+    collection_stats = {}
     try:
-        for tx in transactions:
-            print("Tracing: " + tx["tokenName"] + " #" + tx["tokenID"])
-            tx["details"] = get_transaction_details(tx["hash"])
+        for unique_id, transactions in nfts.items():
+            print(
+                "Tracing: " + transactions["tokenName"] + " #" + transactions["tokenID"]
+            )
+            if transactions["contractAddress"] not in collection_stats:
+                # get_collection_stats handles missing slugs
+                collection_stats["contractAddress"] = get_collection_stats(
+                    transactions["openseaSlug"]
+                )
+                nfts[unique_id] = {
+                    **transactions,
+                    **collection_stats["contractAddress"],
+                }
+
     except Exception as e:
         print(e)
     finally:
-        with open("tmp.json", "w+") as json_file:
-            json.dump(transactions, json_file, indent=2)
+        with open("price_tmp.json", "w+") as json_file:
+            json.dump(nfts, json_file, indent=2)
+        return nfts

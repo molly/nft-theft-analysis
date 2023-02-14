@@ -1,41 +1,55 @@
 import requests
+from constants import SHARED_HEADERS
 from secrets import OPENSEA_API_KEY
-from utils import address_equals
+from time import sleep
+from utils import pick
 
 API_URL = "https://api.opensea.io/api/v1"
-HEADERS = {"Accept": "application/json", "X-API-KEY": OPENSEA_API_KEY}
+HEADERS = {**SHARED_HEADERS, "Accept": "application/json", "X-API-KEY": OPENSEA_API_KEY}
+COLLECTION_STATS_KEYS = [
+    "one_day_average_price",
+    "one_day_sales",
+    "seven_day_sales",
+    "seven_day_average_price",
+    "thirty_day_sales",
+    "thirty_day_average_price",
+    "floor_price",
+    "average_price",
+]
 
 
-def is_theft(event, thief_wallet=None, victim_wallet=None):
-    """A theft is either where an NFT was transferred TO a thief wallet or AWAY FROM a victim wallet"""
-    return (
-        thief_wallet is not None
-        and address_equals(event["to_account"]["address"], thief_wallet)
-    ) or (
-        victim_wallet is not None
-        and address_equals(event["from_account"]["address"], victim_wallet)
+def request_with_backoff(*args, **kwargs):
+    response = requests.get(*args, **kwargs)
+    if response.status_code == 200:
+        return response
+    elif response.status_code == 429:
+        print(
+            "Throttled, trying again in " + sleep(response.headers["retry-after"]) + "s"
+        )
+        sleep(response.headers["retry-after"])
+        return request_with_backoff(*args, **kwargs)
+    else:
+        raise Exception
+
+
+def get_slug(contract):
+    print("Getting slug for " + contract)
+    response = request_with_backoff(
+        API_URL + "/asset_contract/" + contract, headers=HEADERS
     )
+    data = response.json()
+    if "collection" in data:
+        return data["collection"]["slug"]
+    if "success" in data:
+        # Collection not found on OpenSea
+        return None
+    else:
+        raise Exception
 
 
-def get_transfers(
-    thief_wallet=None, victim_wallet=None, start_timestamp=None, end_timestamp=None
-):
-    results = []
-    query = {"account_address": thief_wallet or victim_wallet, "cursor": None}
-    if start_timestamp:
-        query["occurred_after"] = start_timestamp.timestamp() - 1
-    if end_timestamp:
-        query["occurred_before"] = end_timestamp.timestamp() + 1
-
-    while True:
-        response = requests.get(API_URL + "/events", params=query, headers=HEADERS)
-        data = response.json()
-        for event in data["asset_events"]:
-            if is_theft(event, thief_wallet, victim_wallet):
-                # Filter transactions that don't appear to be thefts
-                results.append(event)
-        query["cursor"] = data["next"]
-        if query["cursor"] is None:
-            break
-    print(len(results))
-    return results
+def get_collection_stats(slug):
+    if not slug:
+        return dict((k, None) for k in COLLECTION_STATS_KEYS)
+    response = request_with_backoff(API_URL + "/collection/" + slug + "/stats")
+    data = response.json()
+    return pick(data["stats"], COLLECTION_STATS_KEYS)

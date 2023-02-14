@@ -18,3 +18,9 @@ def address_equals(a, b):
     if not a or not b:
         return False
     return a.casefold() == b.casefold()
+
+
+def pick(dictionary, keys):
+    """Return a subset of the supplied dictionary containing only the specified keys. If the key doesn't exist in the
+    supplied dictionary, include it in the output dict with a value of None"""
+    return dict((k, dictionary.get(k, None)) for k in keys)

@@ -20,3 +20,18 @@ def test_address_equals():
     assert address_equals(address, address) is True
     assert address_equals(address, address.lower()) is True
     assert address_equals(address, address.upper()) is True
+
+
+def test_pick():
+    d = {"a": "a_value", "b": "b_value", "c": "c_value"}
+    a_only = pick(d, ["a"])
+    assert "a" in a_only
+    assert a_only["a"] == "a_value"
+    assert "b" not in a_only
+
+    missing_key = pick(d, ["a", "z"])
+    assert "a" in missing_key
+    assert missing_key["a"] == "a_value"
+    assert "b" not in missing_key
+    assert "z" in missing_key
+    assert missing_key["z"] is None
