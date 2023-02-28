@@ -33,7 +33,7 @@ def make_report(nfts):
                 "Token name",
                 "ID",
                 "Floor USD",
-                "Average price",
+                "Average price USD",
                 "Average price period",
                 "Victim purchase amount USD",
                 "Thief sale amount USD",

@@ -1,6 +1,7 @@
 import requests
 from constants import SHARED_HEADERS
 from secrets import ETHERSCAN_API_KEY
+from utils import address_equals
 
 API_URL = "https://api.etherscan.io/api"
 
@@ -41,7 +42,11 @@ def get_block_numbers(start_timestamp=None, end_timestamp=None):
 
 
 def get_transfers(
-    thief_wallet=None, start_timestamp=None, end_timestamp=None, **kwargs
+    thief_wallet=None,
+    victim_wallet=None,
+    start_timestamp=None,
+    end_timestamp=None,
+    **kwargs
 ):
 
     blocks = None
@@ -53,7 +58,7 @@ def get_transfers(
         {
             "module": "account",
             "action": "tokennfttx",
-            "address": thief_wallet,
+            "address": thief_wallet or victim_wallet,
             "startblock": blocks and blocks["start"],
             "endblock": blocks and blocks["end"],
             "sort": "asc",
@@ -63,6 +68,9 @@ def get_transfers(
     )
     data = response.json()
     data = list(data["result"])
+    if victim_wallet is not None:
+        # Don't need transactions TO the victim
+        data = filter(lambda trans: address_equals(trans["from"], victim_wallet), data)
     return data
 
 

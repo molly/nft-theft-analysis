@@ -49,7 +49,9 @@ def find_thief_activity(nft_transactions, transactions, thief):
     return results
 
 
-def get_price_details_for_transactions(nfts_original, thief):
+def get_price_details_for_transactions(
+    nfts_original, thief_wallet=None, victim_wallet=None, **kwargs
+):
     nfts = nfts_original.copy()
     collection_stats = {}
     for unique_id, transactions in nfts.items():
@@ -72,6 +74,10 @@ def get_price_details_for_transactions(nfts_original, thief):
         data = response.json()
         nft_transactions = list(filter(filter_junk_sales, data["transactions"]))
 
+        if thief_wallet is not None:
+            thief = thief_wallet
+        else:
+            thief = transactions["theft"]["to"]
         # Find details about what thief did with the NFT
         nfts[unique_id] = {
             **nfts[unique_id],
@@ -79,8 +85,12 @@ def get_price_details_for_transactions(nfts_original, thief):
         }
 
         # Try to find information about how the victim acquired the NFT
-        if "theft" in transactions:
+        victim = None
+        if victim_wallet is not None:
+            victim = victim_wallet
+        elif "theft" in transactions:
             victim = transactions["theft"]["from"]
+        if victim is not None:
             sale = find_by(nft_transactions, type="sale", buyer_address=victim)
             if sale:
                 nfts[unique_id]["victim_purchase"] = sale
